@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ambient SmartDetect | Security Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Modern Glassmorphism */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .glass-card {
+                background: rgba(15, 23, 42, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        /* Smooth Loader */
+        .loader {
+            border-top-color: #3b82f6;
+            animation: spinner 0.8s linear infinite;
+        }
+        @keyframes spinner { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-900 dark:bg-[#020617] dark:text-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="fixed inset-0 overflow-hidden -z-10">
+        <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-blue-500/10 blur-[120px]"></div>
+        <div class="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] rounded-full bg-indigo-500/10 blur-[120px]"></div>
+    </div>
+
+    <div class="glass-card w-full max-w-lg rounded-[2.5rem] p-10 shadow-[0_20px_50px_rgba(0,0,0,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
+        <div class="flex flex-col items-center mb-10 text-center">
+            <div class="relative mb-6">
+                <div class="absolute inset-0 bg-blue-600 blur-2xl opacity-20 dark:opacity-40 animate-pulse"></div>
+                <div class="relative bg-blue-600 p-5 rounded-3xl shadow-xl">
+                    <i data-lucide="shield-search" class="text-white w-10 h-10"></i>
+                </div>
+            </div>
+            <h1 class="text-4xl font-extrabold tracking-tight mb-2 bg-gradient-to-br from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
+                SmartDetect
+            </h1>
+            <p class="text-slate-500 dark:text-slate-400 font-medium">Ambient Security Verification Engine</p>
+        </div>
+
+        <div class="space-y-5">
+            <div class="group relative">
+                <div class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                    <i data-lucide="globe" class="w-5 h-5"></i>
+                </div>
+                <input type="text" id="urlInput" 
+                    class="w-full bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl py-5 px-14 text-lg outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                    placeholder="Enter URL to analyze...">
+            </div>
+
+            <button onclick="checkPhishing()" 
+                class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold py-5 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-lg shadow-blue-600/25">
+                <span>Run Diagnostic</span>
+                <i data-lucide="zap" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div id="resultBox" class="mt-10 hidden overflow-hidden">
+            <div id="statusCard" class="p-8 rounded-3xl flex flex-col items-center transition-all duration-700">
+                <div id="statusIcon" class="mb-4"></div>
+                <h3 id="statusHeading" class="text-2xl font-bold mb-2"></h3>
+                <p id="statusDesc" class="text-center text-sm font-medium opacity-70"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        async function checkPhishing() {
+            const input = document.getElementById('urlInput');
+            const resultBox = document.getElementById('resultBox');
+            const statusCard = document.getElementById('statusCard');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusHeading = document.getElementById('statusHeading');
+            const statusDesc = document.getElementById('statusDesc');
+            
+            const scriptUrl = "https://script.google.com/macros/s/AKfycbwU-RWlAUfSAOX30SOENNCmca4Q6QdAMNfb-hCXGTNTfg-AnHUJPLP4jxL7rhEiEg99/exec";
+
+            if (!input.value) {
+                input.classList.add('border-red-500');
+                setTimeout(() => input.classList.remove('border-red-500'), 1000);
+                return;
+            }
+
+            // Enter Loading State
+            resultBox.classList.remove('hidden');
+            statusCard.className = "p-8 rounded-3xl bg-slate-100/50 dark:bg-slate-800/50 flex flex-col items-center";
+            statusIcon.innerHTML = '<div class="loader w-10 h-10 border-4 border-slate-300 rounded-full"></div>';
+            statusHeading.innerText = "Scanning database...";
+            statusHeading.className = "text-xl font-bold text-slate-500 animate-pulse";
+            statusDesc.innerText = "Cross-referencing global phishing signatures";
+
+            try {
+                const response = await fetch(`${scriptUrl}?url=${encodeURIComponent(input.value)}`);
+                const result = await response.text();
+
+                if (result === "phishing") {
+                    statusCard.className = "p-8 rounded-3xl bg-red-500/10 dark:bg-red-500/20 border border-red-500/20 flex flex-col items-center animate-in zoom-in duration-300";
+                    statusIcon.innerHTML = '<div class="bg-red-500 p-3 rounded-full shadow-lg shadow-red-500/40"><i data-lucide="shield-alert" class="text-white w-8 h-8"></i></div>';
+                    statusHeading.innerText = "Phishing Detected";
+                    statusHeading.className = "text-2xl font-black text-red-600 dark:text-red-400";
+                    statusDesc.innerText = "DANGER: This URL is flagged as a high-risk security threat. Access is not recommended.";
+                } else {
+                    statusCard.className = "p-8 rounded-3xl bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/20 flex flex-col items-center animate-in zoom-in duration-300";
+                    statusIcon.innerHTML = '<div class="bg-emerald-500 p-3 rounded-full shadow-lg shadow-emerald-500/40"><i data-lucide="shield-check" class="text-white w-8 h-8"></i></div>';
+                    statusHeading.innerText = "Verified Safe";
+                    statusHeading.className = "text-2xl font-black text-emerald-600 dark:text-emerald-400";
+                    statusDesc.innerText = "Diagnostic complete. No malicious patterns were identified for this address.";
+                }
+                lucide.createIcons();
+            } catch (e) {
+                statusHeading.innerText = "Diagnostic Failed";
+                statusDesc.innerText = "Check your internet connection and try again.";
+            }
+        }
+    </script>
+</body>
+</html>
